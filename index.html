@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>زاوية جاليو — مخطط المحتوى</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root {
+  --bg: #0A0A0F;
+  --surface: #12121A;
+  --card: #18181F;
+  --card-hover: #1E1E28;
+  --border: rgba(255,255,255,0.07);
+  --border-hover: rgba(249,115,22,0.4);
+  --orange: #F97316;
+  --orange-dim: rgba(249,115,22,0.15);
+  --orange-glow: rgba(249,115,22,0.08);
+  --green: #10B981;
+  --amber: #F59E0B;
+  --text: #E2E8F0;
+  --text-muted: #64748B;
+  --text-dim: #334155;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Tajawal', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+/* NAV */
+nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+.nav-logo { display: flex; align-items: center; gap: 10px; }
+.nav-logo-icon { width: 34px; height: 34px; background: var(--orange); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 16px; color: #fff; }
+.nav-title { font-size: 15px; font-weight: 800; }
+.nav-title span { color: var(--orange); }
+.nav-stats { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); }
+.nav-stats b { font-weight: 700; }
+.stat-rec { color: var(--amber); }
+.stat-done { color: var(--green); }
+
+/* LAYOUT */
+.layout { display: grid; grid-template-columns: 300px 1fr; gap: 0; height: calc(100vh - 60px); }
+@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+/* SIDEBAR */
+.sidebar { background: var(--surface); border-left: 1px solid var(--border); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+.sidebar-block { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.sidebar-block h3 { font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 12px; }
+.filter-btn { width: 100%; text-align: right; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-family: 'Tajawal', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }
+.filter-btn:hover, .filter-btn.active { background: var(--orange-dim); border-color: var(--border-hover); color: var(--text); }
+.filter-btn .count { font-size: 11px; background: var(--border); padding: 1px 7px; border-radius: 20px; }
+.filter-btn.active .count { background: var(--orange); color: #fff; }
+.chart-wrap { height: 140px; margin-top: 8px; }
+.tip { background: var(--orange-glow); border: 1px solid rgba(249,115,22,0.2); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: rgba(249,115,22,0.9); line-height: 1.6; }
+
+/* MAIN */
+.main { overflow-y: auto; padding: 20px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+@media (max-width: 600px) { .grid { grid-template-columns: 1fr; } .main { padding: 12px; } }
+
+/* CARD */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+.card:hover { border-color: rgba(249,115,22,0.25); background: var(--card-hover); transform: translateY(-2px); }
+.card.done { opacity: 0.5; }
+.card.done .card-status-bar { background: var(--green); }
+.card.recording .card-status-bar { background: var(--amber); }
+.card-status-bar { position: absolute; top: 0; right: 0; width: 3px; height: 100%; background: transparent; transition: background 0.3s; }
+.card-head { padding: 14px 16px 10px; }
+.card-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.card-cat { font-size: 10px; font-weight: 700; color: var(--text-muted); background: rgba(255,255,255,0.04); padding: 2px 8px; border-radius: 20px; }
+.card-num { font-size: 11px; color: var(--text-dim); font-weight: 700; }
+.card-title { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.6; }
+.card-foot { padding: 10px 16px 14px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.card-progress { display: flex; align-items: center; gap: 8px; }
+.progress-bar { width: 60px; height: 3px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--orange); border-radius: 3px; transition: width 0.3s; }
+.progress-label { font-size: 10px; color: var(--text-muted); }
+.card-actions { display: flex; gap: 6px; }
+.btn-icon { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all 0.15s; }
+.btn-icon:hover { border-color: var(--orange); color: var(--orange); background: var(--orange-dim); }
+.btn-icon.danger:hover { border-color: #EF4444; color: #EF4444; background: rgba(239,68,68,0.1); }
+
+/* MODAL */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
+.overlay.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; width: 100%; max-width: 640px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; }
+.modal-head { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.modal-head-info { flex: 1; }
+.modal-cat-tag { font-size: 10px; font-weight: 700; color: var(--orange); background: var(--orange-dim); padding: 2px 8px; border-radius: 20px; display: inline-block; margin-bottom: 6px; }
+.modal-title { font-size: 15px; font-weight: 700; line-height: 1.5; color: var(--text); }
+.modal-close { width: 32px; height: 32px; border-radius: 8px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+.modal-close:hover { border-color: #EF4444; color: #EF4444; }
+.modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+.modal-status-row { display: flex; gap: 8px; }
+.status-btn { flex: 1; padding: 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-family: 'Tajawal', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.status-btn.pending.active { background: rgba(100,116,139,0.2); border-color: #64748B; color: #94A3B8; }
+.status-btn.recording.active { background: rgba(245,158,11,0.15); border-color: var(--amber); color: var(--amber); }
+.status-btn.done.active { background: rgba(16,185,129,0.15); border-color: var(--green); color: var(--green); }
+.textarea-label { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }
+.autosave-badge { font-size: 10px; color: var(--green); opacity: 0; transition: opacity 0.3s; }
+.autosave-badge.show { opacity: 1; }
+.script-area { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: 'Tajawal', sans-serif; font-size: 14px; line-height: 1.8; padding: 14px; resize: vertical; min-height: 200px; outline: none; transition: border-color 0.2s; direction: rtl; }
+.script-area:focus { border-color: rgba(249,115,22,0.4); }
+.hook-highlight { color: var(--orange); font-weight: 700; }
+.modal-foot { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+.btn { padding: 9px 18px; border-radius: var(--radius-sm); font-family: 'Tajawal', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid var(--border); transition: all 0.2s; }
+.btn-primary { background: var(--orange); border-color: var(--orange); color: #fff; }
+.btn-primary:hover { background: #EA6F0A; }
+.btn-ghost { background: transparent; color: var(--text-muted); }
+.btn-ghost:hover { background: var(--card); color: var(--text); }
+.btn-tele { background: #1a1a2e; border-color: rgba(139,92,246,0.4); color: #A78BFA; }
+.btn-tele:hover { background: rgba(139,92,246,0.15); }
+
+/* TELEPROMPTER */
+.tele-overlay { position: fixed; inset: 0; background: #000; z-index: 500; display: none; flex-direction: column; }
+.tele-overlay.open { display: flex; }
+.tele-controls { padding: 16px 24px; display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
+.tele-controls span { font-size: 13px; color: rgba(255,255,255,0.5); }
+.tele-speed-wrap { display: flex; align-items: center; gap: 8px; margin-right: auto; }
+.speed-btn { width: 32px; height: 32px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.speed-btn:hover { background: rgba(255,255,255,0.1); }
+.speed-label { font-size: 12px; color: rgba(255,255,255,0.5); min-width: 40px; text-align: center; }
+.tele-btn { padding: 7px 16px; border-radius: 8px; font-family: 'Tajawal', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #fff; transition: all 0.2s; }
+.tele-btn.play { background: var(--orange); border-color: var(--orange); }
+.tele-btn.stop { background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.4); color: #FCA5A5; }
+.tele-scroll { flex: 1; overflow: hidden; position: relative; }
+.tele-text-wrap { padding: 60px 10%; font-size: clamp(22px, 4vw, 36px); line-height: 1.9; color: #fff; direction: rtl; text-align: center; }
+.tele-hook { color: var(--orange); font-weight: 900; }
+.tele-center-line { position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: rgba(249,115,22,0.2); pointer-events: none; }
+
+/* DELETE CONFIRM */
+.confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 300; display: none; align-items: center; justify-content: center; }
+.confirm-overlay.open { display: flex; }
+.confirm-box { background: var(--surface); border: 1px solid rgba(239,68,68,0.3); border-radius: var(--radius); padding: 24px; max-width: 320px; text-align: center; }
+.confirm-box h4 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+.confirm-box p { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; }
+.confirm-btns { display: flex; gap: 8px; }
+.btn-danger { flex: 1; padding: 9px; border-radius: var(--radius-sm); background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); color: #FCA5A5; font-family: 'Tajawal', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; }
+.btn-cancel { flex: 1; padding: 9px; border-radius: var(--radius-sm); background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: 'Tajawal', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+/* Empty */
+.empty { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-icon">ج</div>
+    <div class="nav-title">زاوية جاليو <span>| مخطط المحتوى</span></div>
+  </div>
+  <div class="nav-stats">
+    <span>جاري التصوير: <b class="stat-rec" id="s-rec">0</b></span>
+    <span>مكتمل: <b class="stat-done" id="s-done">0</b></span>
+    <span>الكل: <b id="s-total">0</b></span>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-block">
+      <h3>التصنيفات</h3>
+      <button class="filter-btn active" onclick="setFilter('all')" id="f-all">
+        <span>كل الأفكار</span><span class="count" id="fc-all">0</span>
+      </button>
+      <button class="filter-btn" onclick="setFilter('AI والتطور')" id="f-ai">
+        <span>AI والتطور</span><span class="count" id="fc-ai">0</span>
+      </button>
+      <button class="filter-btn" onclick="setFilter('Tools')" id="f-tools">
+        <span>Tools</span><span class="count" id="fc-tools">0</span>
+      </button>
+      <button class="filter-btn" onclick="setFilter('التصميم')" id="f-design">
+        <span>التصميم</span><span class="count" id="fc-design">0</span>
+      </button>
+      <button class="filter-btn" onclick="setFilter('الفن والتاريخ')" id="f-art">
+        <span>الفن والتاريخ</span><span class="count" id="fc-art">0</span>
+      </button>
+      <button class="filter-btn" onclick="setFilter('وجهات نظر')" id="f-opinion">
+        <span>وجهات نظر</span><span class="count" id="fc-opinion">0</span>
+      </button>
+      <button class="filter-btn" onclick="setFilter('شخصيات')" id="f-persons">
+        <span>شخصيات</span><span class="count" id="fc-persons">0</span>
+      </button>
+    </div>
+    <div class="sidebar-block">
+      <h3>توزيع المحتوى</h3>
+      <div class="chart-wrap"><canvas id="chart"></canvas></div>
+    </div>
+    <div class="tip">💡 اضغط على أي كارد عشان تكتب السكريبت. كل حاجة بتتحفظ تلقائياً.</div>
+  </aside>
+
+  <main class="main">
+    <div class="grid" id="grid"></div>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <div class="modal-head-info">
+        <div class="modal-cat-tag" id="m-cat"></div>
+        <div class="modal-title" id="m-title"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="textarea-label">
+          <span>الحالة</span>
+        </div>
+        <div class="modal-status-row">
+          <button class="status-btn pending" id="sb-pending" onclick="setStatus('pending')">⚪ لم يبدأ</button>
+          <button class="status-btn recording" id="sb-recording" onclick="setStatus('recording')">🎥 جاري التصوير</button>
+          <button class="status-btn done" id="sb-done" onclick="setStatus('done')">✅ مكتمل</button>
+        </div>
+      </div>
+      <div>
+        <div class="textarea-label">
+          <span>السكريبت</span>
+          <span class="autosave-badge" id="autosave-badge">✓ تم الحفظ</span>
+        </div>
+        <textarea class="script-area" id="script-area" placeholder="Hook: ابدأ بجملة واحدة تخلي الواحد يوقف السكرول..." oninput="autoSave()"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-tele" onclick="openTele()">▶ تلقين</button>
+      <button class="btn btn-ghost" onclick="closeModal()">إغلاق</button>
+      <button class="btn btn-primary" onclick="saveAndClose()">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- TELEPROMPTER -->
+<div class="tele-overlay" id="tele">
+  <div class="tele-controls">
+    <button class="tele-btn play" id="tele-play-btn" onclick="toggleTele()">▶ تشغيل</button>
+    <button class="tele-btn stop" onclick="closeTele()">✕ إغلاق</button>
+    <div class="tele-speed-wrap">
+      <span>السرعة:</span>
+      <button class="speed-btn" onclick="changeSpeed(-0.2)">−</button>
+      <span class="speed-label" id="speed-label">1.0x</span>
+      <button class="speed-btn" onclick="changeSpeed(0.2)">+</button>
+    </div>
+  </div>
+  <div class="tele-scroll" id="tele-scroll">
+    <div class="tele-center-line"></div>
+    <div class="tele-text-wrap" id="tele-text"></div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h4>حذف الفكرة؟</h4>
+    <p>هيتحذف السكريبت اللي كتبته كمان. مش هترجعه.</p>
+    <div class="confirm-btns">
+      <button class="btn-cancel" onclick="closeConfirm()">إلغاء</button>
+      <button class="btn-danger" onclick="confirmDelete()">حذف</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const IDEAS_RAW = [
+  {id:1,cat:"AI والتطور",text:'كل يوم بيتعمل 34 مليون صورة بالـ "AI" — في الوقت اللي بتقرأ فيه ده اتعملت آلاف'},
+  {id:2,cat:"AI والتطور",text:'بين 2022 و2023 اتعملت 15 مليار صورة بـ "AI" — أكتر من كل تاريخ الفوتوغرافي'},
+  {id:3,cat:"AI والتطور",text:'سوق الـ "AI" في الديزاين هيتضاعف من 6 مليار لـ 13 مليار دولار في 5 سنين'},
+  {id:4,cat:"AI والتطور",text:'"Jason Allen" فاز بجايزة فن في كولورادو 2022 بصورة "Midjourney" — والحكام مكانوش عارفين'},
+  {id:5,cat:"AI والتطور",text:'لوحة "AI" اتباعت في "Christie\'s" بـ 432,000 دولار — والتقدير كان 7,000 بس'},
+  {id:6,cat:"AI والتطور",text:'في 2021 "DALL-E" طلع — في 2022 "Midjourney" و"Stable Diffusion" — في سنة واحدة العالم اتغير'},
+  {id:7,cat:"AI والتطور",text:'"GPT Image 1" طلع مارس 2025 — "Midjourney v7" أبريل 2025 — "Flux.2" نوفمبر 2025 — كل شهر في جديد'},
+  {id:8,cat:"AI والتطور",text:'55% من الفنانين خايفين الـ "AI" تأثر على دخلهم — و80% في نفس الوقت متفائلين'},
+  {id:9,cat:"AI والتطور",text:'89% من الفنانين شايفين إن قوانين الـ "copyright" مش كافية للـ "AI" — والقضايا بدأت فعلاً'},
+  {id:10,cat:"AI والتطور",text:'الـ "AI" اتتدرب على شغل الفنانين من غير إذنهم — ودلوقتي بيتنافس معاهم بشغلهم هم'},
+  {id:11,cat:"AI والتطور",text:'76% من الناس مش شايفين الـ "AI art" فن حقيقي — بس بيستخدموه في كل حاجة'},
+  {id:12,cat:"AI والتطور",text:'الـ "deepfakes" والصور المفبركة — 70% من الناس خايفين منها — وبتتعمل بنفس الـ "tools" اللي بنستخدمها'},
+  {id:13,cat:"AI والتطور",text:'الـ "AI" بيعمل "average" الكل — وده أحياناً هو بالظبط اللي السوق عايزه'},
+  {id:14,cat:"AI والتطور",text:'لما الكل يستخدم "AI" — التميز هيرجع للـ "human touch" اللي الناس كانت بتهرب منه'},
+  {id:15,cat:"AI والتطور",text:'الـ "AI" مش بيحل المشكلة — بيكبّرها لو مش عارف إيه المشكلة أصلاً'},
+  {id:16,cat:"AI والتطور",text:'الـ "AI" بيعمل الـ "design trends" بسرعة — ويقتلها بنفس السرعة'},
+  {id:17,cat:"AI والتطور",text:'الناس بدأت تدور على الـ "imperfection" عشان الـ "AI" بقى "perfect" أوي — الـ "grain" والـ "texture" عادوا'},
+  {id:18,cat:"AI والتطور",text:'الـ "AI" بيتعلم الـ "bias" من البشر — يعني بيعيد إنتاج نفس الأخطاء بس بشكل أسرع'},
+  {id:19,cat:"AI والتطور",text:'خبراء بيتوقعوا إن 90% من أفلام الـ "big budget" هتبقى "AI generated" بحلول 2030'},
+  {id:20,cat:"AI والتطور",text:'الـ "AI" مش بيفهم الثقافة — بيعمل تصميم "عالمي" بس فارغ من أي هوية محلية'},
+  {id:21,cat:"Tools",text:'"Midjourney" نمت 300% بين 2022 و2023 — "tool" واحدة، سنة واحدة'},
+  {id:22,cat:"Tools",text:'95% من مستخدمي "Canva Pro" بيستخدموا الـ "AI features" — الـ "tool" بقت "AI tool" من غير ما حد يلاحظ'},
+  {id:23,cat:"Tools",text:'"Figma" بقت فيها "AI" — 1 من كل 3 مستخدمين بيخططوا يطلقوا منتجات "AI" بـ "Figma" في 2025'},
+  {id:24,cat:"Tools",text:'"Adobe Firefly" اتعمل "commercially safe" — يعني كل الصور اللي اتتدرب عليها مرخصة'},
+  {id:25,cat:"Tools",text:'"Runway Gen-4" بتعمل فيديو من صورة — "Sora" بتكتب وتطلع فيديو — الفيديو بقى "prompt"'},
+  {id:26,cat:"Tools",text:'"Claude" في التصميم — مش بس كتابة، بيساعد في التفكير وتحليل الـ "brief" وكتابة الـ "prompt"'},
+  {id:27,cat:"Tools",text:'"Khroma" بتتعلم ألوانك المفضلة وتولد آلاف الـ "palettes" على أساسها'},
+  {id:28,cat:"Tools",text:'"Uizard" بتحول "sketch" بإيدك لـ "UI design" كامل — في دقيقة'},
+  {id:29,cat:"Tools",text:'"V0" بتحول "Figma frame" لـ "React code" جاهز للـ "production" — الديزاين بقى كود'},
+  {id:30,cat:"Tools",text:'"Flux.1 Kontext" طلعت 2025 — "high fidelity image generation" بـ "text" و"image reference" مع بعض'},
+  {id:31,cat:"Tools",text:'الـ "FOMO" بقى مهنة — مش بتشتغل، بتتفرج على "tools"'},
+  {id:32,cat:"Tools",text:'لما تشترك في 5 "tools" وتستخدم واحدة — والأربعة تانيين بياخدوا فلوسك كل شهر'},
+  {id:33,cat:"Tools",text:'الـ "tutorial" اللي اتعلمته امبارح — الـ "tool" اتغيرت من وانت بتتفرج عليه'},
+  {id:34,cat:"Tools",text:'"Stable Diffusion" مفتوح المصدر — يعني أي حد يقدر يشغله على جهازه من غير رقابة'},
+  {id:35,cat:"Tools",text:'الـ "AI tools" بتقلل الـ "manual workload" بـ 45% — بس الوقت ده محتاج قرار: هتعمل بيه إيه؟'},
+  {id:36,cat:"Tools",text:'57% من الـ "branding agencies" دلوقتي بتستخدم "AI" في عمل الـ "mood boards"'},
+  {id:37,cat:"Tools",text:'"Spline" بتعمل "3D" في المتصفح بالـ "AI" — الـ "3D" مش محتاج برامج تقيلة خالص'},
+  {id:38,cat:"Tools",text:'كل أسبوع في "أحسن tool في التاريخ" — وبعد شهر اتنسيت. إيه اللي بيخلي "tool" تفضل؟'},
+  {id:39,cat:"Tools",text:'مش المهم إنك تعرف الـ "tool" — المهم إنك تعرف امتى تستخدمها وامتى لأ'},
+  {id:40,cat:"Tools",text:'الـ "prompt" هو التصميم الجديد — اللي يعرف يسأل كويس هيطلع نتيجة أحسن'},
+  {id:41,cat:"التصميم",text:'الفرق بين ديزاينر بيستخدم "AI" وـ "AI" بيعمل ديزاين — هو الفهم مش الأداة'},
+  {id:42,cat:"التصميم",text:'الـ "AI" بيعمل حاجة "technically" صح بس روحها غلط — ومحدش بيلاحظ. ليه؟'},
+  {id:43,cat:"التصميم",text:'الـ "Composition" مش قاعدة — فهم. وده اللي الـ "AI" مش بيفهمه'},
+  {id:44,cat:"التصميم",text:'الـ "brief" الكويس أصعب من التصميم نفسه — وده اللي محدش بيعلمه'},
+  {id:45,cat:"التصميم",text:'الألوان مش مجرد جمال — بيتكلموا. كل لون بيقول حاجة من غير كلام'},
+  {id:46,cat:"التصميم",text:'الـ "Typography" مش اختيار "font" — ده صوت الكلام قبل ما تقراه'},
+  {id:47,cat:"التصميم",text:'الـ "white space" مش فراغ — ده جزء من التصميم. ومحدش بيفهمه من أول وهلة'},
+  {id:48,cat:"التصميم",text:'الـ "logo" مش صورة — ده وعد. وفيه فرق كبير بين الاتنين'},
+  {id:49,cat:"التصميم",text:'الديزاينر اللي بيشتغل بدون "brief" — بيتعب ضعف ويرضي نص'},
+  {id:50,cat:"التصميم",text:'الـ "UX" مش شكل — ده قرار. كل زرار في موضعه ليه سبب'},
+  {id:51,cat:"التصميم",text:'الـ "grid" مش قيد — ده هيكل عظمي. من غيره التصميم بيبقى هوا'},
+  {id:52,cat:"التصميم",text:'الـ "minimalism" مش "بسيط" — أصعب من الـ "busy design" بمراحل'},
+  {id:53,cat:"التصميم",text:'إيه اللي يخلي تصميم يفضل 50 سنة؟ — "Coca-Cola" و"Nike" والإجابة مش في الشكل'},
+  {id:54,cat:"التصميم",text:'الـ "branding" مش لوجو — ده تجربة كاملة. الـ "logo" آخر حاجة'},
+  {id:55,cat:"التصميم",text:'الكلاينت اللي بيقولك "اعمله pop" — ده مش وصف. ده صرخة'},
+  {id:56,cat:"التصميم",text:'الديزاين الكويس مش اللي بتلاحظه — اللي بيخليك تعمل حاجة من غير ما تفكر'},
+  {id:57,cat:"التصميم",text:'الفرق بين الـ "graphic design" والـ "visual communication" — وليه الفرق ده مهم'},
+  {id:58,cat:"التصميم",text:'الـ "color psychology" في الـ "branding" — ليه البنوك زرقاء والأكل أحمر'},
+  {id:59,cat:"التصميم",text:'الـ "UI design" مش الـ "UX" — وكتير من الناس بتخلط بينهم'},
+  {id:60,cat:"التصميم",text:'أقوى مهارة في الديزاين دلوقتي مش في "Photoshop" — في إنك تعرف تحكي قصة'},
+  {id:61,cat:"الفن والتاريخ",text:'"AARON" — برنامج رسم طوره "Harold Cohen" في السبعينيات — أول "AI artist" في التاريخ'},
+  {id:62,cat:"الفن والتاريخ",text:'الـ "Bauhaus" 1919 — المدرسة اللي خلت الـ "form follows function" — وأثرت في كل حاجة حواليك'},
+  {id:63,cat:"الفن والتاريخ",text:'الـ "GANs" اتخترعوا 2014 — شبكتان بتتنافسوا لحد ما الصورة تبقى مقنعة — ده أساس كل الـ "AI art"'},
+  {id:64,cat:"الفن والتاريخ",text:'الـ "Impressionism" اتحاربوه في أول طلوعه — دلوقتي موسيتهم في كل متحف. التغيير دايماً بيترفض الأول'},
+  {id:65,cat:"الفن والتاريخ",text:'لما الكاميرا اتخترعت — الناس قالت الرسم مات. الرسم ما ماتش — اتغير'},
+  {id:66,cat:"الفن والتاريخ",text:'الـ "Cubism" بتاع "Picasso" — كان بيحاول يرسم الحاجة من كل الزوايا في نفس الوقت. ده "thinking" مش "technique"'},
+  {id:67,cat:"الفن والتاريخ",text:'الـ "Swiss Style" في الستينيات — الـ "grid" والـ "typography" الحديثة جت منه. كل ديزاين "clean" شايفه اليومين دول'},
+  {id:68,cat:"الفن والتاريخ",text:'"Andy Warhol" والـ "Pop Art" — أول ما حد قال إن الثقافة الشعبية والـ "Coca-Cola" فن. وكان صح'},
+  {id:69,cat:"الفن والتاريخ",text:'الـ "DeepDream" بتاع "Google" 2015 — أول ما الناس شافت الـ "AI" بيحلم — وكان مرعب وجميل'},
+  {id:70,cat:"الفن والتاريخ",text:'"StyleGAN" من "NVIDIA" 2018 — أول ما الـ "AI" عمل وجوه بشر "realistic" — وجوه ناس مش موجودة'},
+  {id:71,cat:"الفن والتاريخ",text:'الـ "Dadaism" — حركة فنية قالت إن الفن نفسه مش مهم. وبسببها اتعمل أكتر ما يكون'},
+  {id:72,cat:"الفن والتاريخ",text:'"Wassily Kandinsky" — أول حد رسم "abstract" — وقال إن الألوان عندها موسيقى'},
+  {id:73,cat:"الفن والتاريخ",text:'الـ "Photomontage" في الـ 1920s — أول ما حد قطع صور وركّبهم مع بعض. ده الـ "Photoshop" بتاع زمان'},
+  {id:74,cat:"الفن والتاريخ",text:'الـ "Art Nouveau" — الحركة اللي خدت الطبيعة وحولتها لـ "design". الـ "curves" والـ "organic shapes" جت منها'},
+  {id:75,cat:"الفن والتاريخ",text:'"Marcel Duchamp" حط "toilet" في معرض فني وسماه "Fountain" — وغيّر تعريف الفن للأبد'},
+  {id:76,cat:"الفن والتاريخ",text:'الـ "Constructivism" السوفيتي — أول ما الفن اتحول لـ "propaganda". وأثّر في كل الـ "political design"'},
+  {id:77,cat:"الفن والتاريخ",text:'الـ "De Stijl" — "Mondrian" والمستطيلات والألوان الأساسية. ده مش تبسيط — ده فلسفة'},
+  {id:78,cat:"الفن والتاريخ",text:'الـ "Street Art" من "graffiti" لـ "Banksy" — إزاي الفن اللي كان جريمة بقى في المتاحف'},
+  {id:79,cat:"الفن والتاريخ",text:'الـ "NFT boom" 2021 — أول ما الفن الرقمي اتباع بملايين. وبعدين؟'},
+  {id:80,cat:"الفن والتاريخ",text:'كل حركة فنية في التاريخ جت كرد فعل على اللي قبلها — الـ "AI art" مش استثناء'},
+  {id:81,cat:"وجهات نظر",text:'الـ "AI" مش هيبلع الديزاينر — هيبلع الديزاينر اللي مش عارف يسأل صح'},
+  {id:82,cat:"وجهات نظر",text:'الخوف من الـ "AI" مش من الـ "AI" — من حد تاني يعرف يستخدمه أحسن منك'},
+  {id:83,cat:"وجهات نظر",text:'الـ "creativity" الحقيقية مش في الـ "output" — في السؤال اللي بتسأله قبل الـ "output"'},
+  {id:84,cat:"وجهات نظر",text:'الـ "AI" بيوفر وقتك — بس الوقت ده محتاج قرار. هتستخدمه في إيه؟'},
+  {id:85,cat:"وجهات نظر",text:'رأيي إن الـ "portfolio" بعد سنتين هيتقيّم بإيه السؤال اللي سألته — مش الأداة اللي استخدمتها'},
+  {id:86,cat:"وجهات نظر",text:'الـ "AI" مش بديل للخبرة — بديل للمهارة الميكانيكية. الخبرة هي اللي بتحكم'},
+  {id:87,cat:"وجهات نظر",text:'لو الـ "AI" بيعمل الشغل — قيمتك في إنك تعرف الشغل ده صح ولا غلط'},
+  {id:88,cat:"وجهات نظر",text:'الـ "AI" بيعمل حاجات بدون عاطفة — وبتنجح. ده مش مشكلة الـ "AI" — ده مشكلة السوق'},
+  {id:89,cat:"وجهات نظر",text:'لما الكل يقدر يعمل ديزاين — مين اللي يقدر يحكم إن ده كويس؟ الـ "taste" بقت أهم'},
+  {id:90,cat:"وجهات نظر",text:'أنا شايف إن التطور مش إنك تعرف كل "tool" — إنك تعرف تسأل السؤال الصح في الوقت الصح'},
+  {id:91,cat:"وجهات نظر",text:'الـ "AI" مش عدوك ومش صاحبك — هو مرايا بتعكس اللي انت شايله'},
+  {id:92,cat:"وجهات نظر",text:'الديزاين الكويس مش بيخدم الـ "trend" — بيخدم المشكلة. والـ "AI" مش بيفهم المشكلة'},
+  {id:93,cat:"وجهات نظر",text:'رأيي إن الـ "brief" هو أهم جزء في الشغل — وده اللي محدش بيديه وقته'},
+  {id:94,cat:"وجهات نظر",text:'الـ "AI" بيخليك تنتج أسرع — مش بالضرورة تفكر أحسن. والفرق ده مهم'},
+  {id:95,cat:"وجهات نظر",text:'السؤال مش "هيبلعني ولا لأ؟" — السؤال "أنا هعمل إيه بالوقت اللي رجعلي؟"'},
+  {id:96,cat:"شخصيات",text:'"Dieter Rams" — "Less but better" — الراجل اللي أثر في "Jonathan Ive" وفي "Apple" من غير ما يعرف'},
+  {id:97,cat:"شخصيات",text:'"Paul Rand" — عمل لوجو "IBM" و"ABC" و"UPS" — وعلّم الناس إن الـ "simplicity" مش سهلة'},
+  {id:98,cat:"شخصيات",text:'"Saul Bass" — عمل "opening credits" الأفلام فن — قبله كانوا مجرد أسماء'},
+  {id:99,cat:"شخصيات",text:'"Milton Glaser" — عمل "I ❤ NY" — وهو مش فاكره كان هيبقى ده "legacy" بتاعه'},
+  {id:100,cat:"شخصيات",text:'"Massimo Vignelli" — عمل الـ "NYC subway map" — وقال "إذا اتعلمت 12 font هتبقى كافيين لعمرك كله"'},
+  {id:101,cat:"شخصيات",text:'"Jan Tschichold" — كتب قواعد الـ "typography" الحديثة — وبعدين كسرها كلها بنفسه'},
+  {id:102,cat:"شخصيات",text:'"Wim Crouwel" — الراجل اللي صمم "font" عشان تشتغل على الشاشة من الستينيات'},
+  {id:103,cat:"شخصيات",text:'"El Lissitzky" — السوفيتي اللي خلى الـ "design" يتكلم سياسة — وأثر في كل الـ "modern layout"'},
+  {id:104,cat:"شخصيات",text:'"Otl Aicher" — صمم الـ "Olympics" 1972 — وأول ما استخدم الـ "pictograms" اللي لسه موجودين لحد دلوقتي'},
+  {id:105,cat:"شخصيات",text:'"Chip Kidd" — غلاف "Jurassic Park" وغيره — عمل الـ "book cover" فن من غير ما حد يلاحظ'},
+  {id:106,cat:"شخصيات",text:'"Refik Anadol" — الفنان اللي بيستخدم الـ "AI" كـ "medium" مش كـ "shortcut" — وشغله في أكبر متاحف العالم'},
+  {id:107,cat:"شخصيات",text:'"Harold Cohen" و"AARON" — الفنان اللي قضى 40 سنة يعلم برنامج يرسم — وسأل "مين الفنان؟"'},
+  {id:108,cat:"شخصيات",text:'"Herb Lubalin" — الراجل اللي خلى الـ "typography" تعبّر — الكلمة بقت صورة في إيده'},
+  {id:109,cat:"شخصيات",text:'"Stefan Sagmeister" — الراجل اللي بياخد سنة إجازة كل 7 سنين عشان يرجع مبدع — ولسه شاغل'},
+  {id:110,cat:"شخصيات",text:'"Neville Brody" — صمم الـ "Face Magazine" في الـ 80s وغيّر وجه الـ "editorial design" للأبد'}
+];
+
+// Load state
+let data = {};
+const saved = localStorage.getItem('galileo_v2');
+if(saved) { try { data = JSON.parse(saved); } catch(e) { data = {}; } }
+
+// Merge with fresh ideas
+IDEAS_RAW.forEach(idea => {
+  if(!data[idea.id]) data[idea.id] = { status:'pending', script:'' };
+});
+
+function save() { localStorage.setItem('galileo_v2', JSON.stringify(data)); }
+
+let currentFilter = 'all';
+let currentId = null;
+let deleteId = null;
+let teleRunning = false;
+let teleSpeed = 1.0;
+let teleRaf = null;
+let telePos = 0;
+let autosaveTimer = null;
+
+function getFiltered() {
+  if(currentFilter === 'all') return IDEAS_RAW;
+  return IDEAS_RAW.filter(i => i.cat === currentFilter);
+}
+
+function getProgress(id) {
+  const s = data[id]?.script || '';
+  if(!s.trim()) return 0;
+  if(s.length < 50) return 30;
+  if(s.length < 200) return 60;
+  return 100;
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  const items = getFiltered();
+  if(!items.length) { grid.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><p>مفيش أفكار في التصنيف ده</p></div>'; return; }
+  grid.innerHTML = items.map(idea => {
+    const d = data[idea.id];
+    const prog = getProgress(idea.id);
+    const statusClass = d.status === 'done' ? 'done' : d.status === 'recording' ? 'recording' : '';
+    const progLabel = prog === 0 ? 'فاضي' : prog < 100 ? 'جاري الكتابة' : 'مكتمل';
+    return `<div class="card ${statusClass}" onclick="openModal(${idea.id})">
+      <div class="card-status-bar"></div>
+      <div class="card-head">
+        <div class="card-meta">
+          <span class="card-cat">${idea.cat}</span>
+          <span class="card-num">#${String(idea.id).padStart(3,'0')}</span>
+        </div>
+        <div class="card-title">${idea.text}</div>
+      </div>
+      <div class="card-foot">
+        <div class="card-progress">
+          <div class="progress-bar"><div class="progress-fill" style="width:${prog}%"></div></div>
+          <span class="progress-label">${progLabel}</span>
+        </div>
+        <div class="card-actions" onclick="event.stopPropagation()">
+          <button class="btn-icon" onclick="openModal(${idea.id})" title="تعديل">✏️</button>
+          <button class="btn-icon danger" onclick="askDelete(${idea.id})" title="حذف السكريبت">🗑️</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateStats() {
+  const rec = IDEAS_RAW.filter(i => data[i.id]?.status === 'recording').length;
+  const done = IDEAS_RAW.filter(i => data[i.id]?.status === 'done').length;
+  document.getElementById('s-rec').textContent = rec;
+  document.getElementById('s-done').textContent = done;
+  document.getElementById('s-total').textContent = IDEAS_RAW.length;
+  // filter counts
+  document.getElementById('fc-all').textContent = IDEAS_RAW.length;
+  ['AI والتطور','Tools','التصميم','الفن والتاريخ','وجهات نظر','شخصيات'].forEach((cat,i) => {
+    const ids = ['fc-ai','fc-tools','fc-design','fc-art','fc-opinion','fc-persons'];
+    document.getElementById(ids[i]).textContent = IDEAS_RAW.filter(x => x.cat === cat).length;
+  });
+}
+
+function setFilter(cat) {
+  currentFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  const map = {'all':'f-all','AI والتطور':'f-ai','Tools':'f-tools','التصميم':'f-design','الفن والتاريخ':'f-art','وجهات نظر':'f-opinion','شخصيات':'f-persons'};
+  document.getElementById(map[cat])?.classList.add('active');
+  renderGrid();
+}
+
+function openModal(id) {
+  currentId = id;
+  const idea = IDEAS_RAW.find(i => i.id === id);
+  const d = data[id];
+  document.getElementById('m-cat').textContent = idea.cat;
+  document.getElementById('m-title').textContent = idea.text;
+  document.getElementById('script-area').value = d.script || '';
+  updateStatusBtns(d.status);
+  document.getElementById('autosave-badge').classList.remove('show');
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if(e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('open');
+  save();
+  renderGrid();
+  updateStats();
+}
+
+function updateStatusBtns(status) {
+  ['pending','recording','done'].forEach(s => {
+    document.getElementById('sb-'+s).classList.toggle('active', s === status);
+  });
+}
+
+function setStatus(s) {
+  if(!currentId) return;
+  data[currentId].status = s;
+  updateStatusBtns(s);
+  save();
+}
+
+function autoSave() {
+  if(!currentId) return;
+  data[currentId].script = document.getElementById('script-area').value;
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    save();
+    const badge = document.getElementById('autosave-badge');
+    badge.classList.add('show');
+    setTimeout(() => badge.classList.remove('show'), 2000);
+  }, 600);
+}
+
+function saveAndClose() {
+  if(currentId) { data[currentId].script = document.getElementById('script-area').value; save(); }
+  document.getElementById('modal-overlay').classList.remove('open');
+  renderGrid(); updateStats();
+}
+
+function askDelete(id) {
+  deleteId = id;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('open'); deleteId = null; }
+function confirmDelete() {
+  if(deleteId) { data[deleteId] = { status:'pending', script:'' }; save(); }
+  closeConfirm();
+  renderGrid(); updateStats();
+}
+
+// TELEPROMPTER
+function openTele() {
+  const script = document.getElementById('script-area').value;
+  if(!script.trim()) { alert('اكتب السكريبت الأول'); return; }
+  const lines = script.split('\n').filter(l => l.trim());
+  const html = lines.map(l => {
+    const formatted = l.replace(/^(Hook:)/i, '<span class="tele-hook">$1</span>');
+    return `<p style="margin-bottom:1.2em">${formatted}</p>`;
+  }).join('');
+  document.getElementById('tele-text').innerHTML = html;
+  telePos = 0;
+  document.getElementById('tele-scroll').scrollTop = 0;
+  document.getElementById('tele').classList.add('open');
+  teleRunning = false;
+  document.getElementById('tele-play-btn').textContent = '▶ تشغيل';
+}
+
+function closeTele() {
+  stopTele();
+  document.getElementById('tele').classList.remove('open');
+}
+
+function toggleTele() {
+  if(teleRunning) { stopTele(); document.getElementById('tele-play-btn').textContent = '▶ تشغيل'; }
+  else { startTele(); document.getElementById('tele-play-btn').textContent = '⏸ إيقاف'; }
+}
+
+function startTele() {
+  teleRunning = true;
+  const scroll = document.getElementById('tele-scroll');
+  let last = null;
+  function step(ts) {
+    if(!teleRunning) return;
+    if(last) { const dt = ts - last; scroll.scrollTop += (teleSpeed * 0.06 * dt); }
+    last = ts;
+    teleRaf = requestAnimationFrame(step);
+  }
+  teleRaf = requestAnimationFrame(step);
+}
+
+function stopTele() { teleRunning = false; cancelAnimationFrame(teleRaf); }
+function changeSpeed(d) {
+  teleSpeed = Math.max(0.2, Math.min(4, Math.round((teleSpeed + d) * 10) / 10));
+  document.getElementById('speed-label').textContent = teleSpeed.toFixed(1) + 'x';
+}
+
+// Chart
+const ctx = document.getElementById('chart').getContext('2d');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: ['AI', 'Tools', 'تصميم', 'تاريخ', 'رأي', 'شخصيات'],
+    datasets: [{ data: [20,20,20,20,15,15], backgroundColor: 'rgba(249,115,22,0.35)', borderColor: '#F97316', borderWidth: 1, borderRadius: 4 }]
+  },
+  options: {
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { display: false },
+      x: { ticks: { color: '#475569', font: { family: 'Tajawal', size: 10 } }, grid: { display: false } }
+    }
+  }
+});
+
+// keyboard ESC
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') { closeTele(); closeModal(); closeConfirm(); }
+});
+
+// Init
+updateStats();
+renderGrid();
+</script>
+</body>
+</html>
