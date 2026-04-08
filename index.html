@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>زاوية جاليو — مخطط المحتوى</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 :root {
   --bg: #0A0A0F;
@@ -41,7 +40,6 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.85); b
 
 /* LAYOUT */
 .layout { display: grid; grid-template-columns: 300px 1fr; gap: 0; height: calc(100vh - 60px); }
-@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .sidebar { display: none; } }
 
 /* SIDEBAR */
 .sidebar { background: var(--surface); border-left: 1px solid var(--border); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
@@ -51,8 +49,31 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.85); b
 .filter-btn:hover, .filter-btn.active { background: var(--orange-dim); border-color: var(--border-hover); color: var(--text); }
 .filter-btn .count { font-size: 11px; background: var(--border); padding: 1px 7px; border-radius: 20px; }
 .filter-btn.active .count { background: var(--orange); color: #fff; }
-.chart-wrap { height: 140px; margin-top: 8px; }
 .tip { background: var(--orange-glow); border: 1px solid rgba(249,115,22,0.2); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: rgba(249,115,22,0.9); line-height: 1.6; }
+
+/* HAMBURGER — mobile only */
+.hamburger-btn { display: none; width: 36px; height: 36px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); color: var(--text); font-size: 18px; cursor: pointer; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+.hamburger-btn:hover { border-color: var(--orange); color: var(--orange); }
+
+/* DRAWER OVERLAY */
+.drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 150; display: none; backdrop-filter: blur(4px); }
+.drawer-overlay.open { display: block; }
+
+/* MOBILE */
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .hamburger-btn { display: flex; }
+  .sidebar {
+    position: fixed;
+    top: 0; right: -320px;
+    width: 300px; height: 100vh;
+    z-index: 160;
+    transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
+    border-left: 1px solid var(--border);
+    padding-top: 70px;
+  }
+  .sidebar.drawer-open { right: 0; }
+}
 
 /* MAIN */
 .main { overflow-y: auto; padding: 20px; }
@@ -62,10 +83,10 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.85); b
 /* CARD */
 .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
 .card:hover { border-color: rgba(249,115,22,0.25); background: var(--card-hover); transform: translateY(-2px); }
-.card.done { opacity: 0.5; }
-.card.done .card-status-bar { background: var(--green); }
-.card.recording .card-status-bar { background: var(--amber); }
-.card-status-bar { position: absolute; top: 0; right: 0; width: 3px; height: 100%; background: transparent; transition: background 0.3s; }
+.card.done { opacity: 0.6; }
+.card.done .card-status-bar { background: var(--green); box-shadow: 0 0 8px rgba(16,185,129,0.5); }
+.card.recording .card-status-bar { background: var(--amber); box-shadow: 0 0 8px rgba(245,158,11,0.5); }
+.card-status-bar { position: absolute; top: 0; right: 0; width: 4px; height: 100%; background: rgba(148,163,184,0.25); transition: background 0.3s; }
 .card-head { padding: 14px 16px 10px; }
 .card-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .card-cat { font-size: 10px; font-weight: 700; color: var(--text-muted); background: rgba(255,255,255,0.04); padding: 2px 8px; border-radius: 20px; }
@@ -93,10 +114,10 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.85); b
 .modal-close:hover { border-color: #EF4444; color: #EF4444; }
 .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px; }
 .modal-status-row { display: flex; gap: 8px; }
-.status-btn { flex: 1; padding: 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-family: 'Tajawal', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-.status-btn.pending.active { background: rgba(100,116,139,0.2); border-color: #64748B; color: #94A3B8; }
-.status-btn.recording.active { background: rgba(245,158,11,0.15); border-color: var(--amber); color: var(--amber); }
-.status-btn.done.active { background: rgba(16,185,129,0.15); border-color: var(--green); color: var(--green); }
+.status-btn { flex: 1; padding: 10px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-family: 'Tajawal', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.status-btn.pending.active { background: rgba(148,163,184,0.18); border-color: #94A3B8; color: #CBD5E1; box-shadow: 0 0 10px rgba(148,163,184,0.15); }
+.status-btn.recording.active { background: rgba(245,158,11,0.22); border-color: var(--amber); color: #FCD34D; box-shadow: 0 0 12px rgba(245,158,11,0.3); }
+.status-btn.done.active { background: rgba(16,185,129,0.22); border-color: var(--green); color: #34D399; box-shadow: 0 0 12px rgba(16,185,129,0.3); }
 .textarea-label { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }
 .autosave-badge { font-size: 10px; color: var(--green); opacity: 0; transition: opacity 0.3s; }
 .autosave-badge.show { opacity: 1; }
@@ -115,7 +136,7 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.85); b
 /* TELEPROMPTER */
 .tele-overlay { position: fixed; inset: 0; background: #000; z-index: 500; display: none; flex-direction: column; }
 .tele-overlay.open { display: flex; }
-.tele-controls { padding: 16px 24px; display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
+.tele-controls { padding: 16px 24px; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; flex-wrap: wrap; }
 .tele-controls span { font-size: 13px; color: rgba(255,255,255,0.5); }
 .tele-speed-wrap { display: flex; align-items: center; gap: 8px; margin-right: auto; }
 .speed-btn { width: 32px; height: 32px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -124,8 +145,13 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.85); b
 .tele-btn { padding: 7px 16px; border-radius: 8px; font-family: 'Tajawal', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #fff; transition: all 0.2s; }
 .tele-btn.play { background: var(--orange); border-color: var(--orange); }
 .tele-btn.stop { background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.4); color: #FCA5A5; }
-.tele-scroll { flex: 1; overflow: hidden; position: relative; }
-.tele-text-wrap { padding: 60px 10%; font-size: clamp(22px, 4vw, 36px); line-height: 1.9; color: #fff; direction: rtl; text-align: center; }
+.tele-btn.restart { background: rgba(139,92,246,0.2); border-color: rgba(139,92,246,0.4); color: #A78BFA; }
+.tele-scroll { flex: 1; overflow-y: scroll; overflow-x: hidden; position: relative; cursor: grab; user-select: none; }
+.tele-scroll:active { cursor: grabbing; }
+.tele-scroll::-webkit-scrollbar { width: 4px; }
+.tele-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+.tele-scroll::-webkit-scrollbar-thumb { background: rgba(249,115,22,0.4); border-radius: 4px; }
+.tele-text-wrap { padding: 60px 10%; font-size: clamp(22px, 4vw, 36px); line-height: 1.9; color: #fff; direction: rtl; text-align: center; padding-bottom: 60vh; }
 .tele-hook { color: var(--orange); font-weight: 900; }
 .tele-center-line { position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: rgba(249,115,22,0.2); pointer-events: none; }
 
@@ -142,6 +168,48 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.85); b
 /* Empty */
 .empty { text-align: center; padding: 60px 20px; color: var(--text-muted); }
 .empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+/* COLLAPSIBLE CATEGORIES */
+.cat-group { margin-bottom: 4px; }
+.cat-header { width: 100%; text-align: right; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-family: 'Tajawal', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cat-header:hover { background: var(--orange-dim); border-color: var(--border-hover); color: var(--text); }
+.cat-header.active { background: var(--orange-dim); border-color: var(--border-hover); color: var(--text); }
+.cat-header .cat-left { display: flex; align-items: center; gap: 8px; flex: 1; }
+.cat-header .cat-arrow { font-size: 10px; transition: transform 0.25s; flex-shrink: 0; }
+.cat-header.open .cat-arrow { transform: rotate(180deg); }
+.cat-header .count { font-size: 11px; background: rgba(255,255,255,0.06); padding: 1px 7px; border-radius: 20px; flex-shrink: 0; }
+.cat-header.active .count { background: var(--orange); color: #fff; }
+.cat-body { overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
+.cat-body.open { max-height: 2000px; }
+.cat-sub-filter { width: 100%; text-align: right; padding: 7px 12px 7px 28px; border-radius: var(--radius-sm); border: none; background: transparent; color: var(--text-muted); font-family: 'Tajawal', sans-serif; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: space-between; margin-top: 2px; }
+.cat-sub-filter:hover { background: rgba(249,115,22,0.08); color: var(--text); }
+.all-filter { width: 100%; text-align: right; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-family: 'Tajawal', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }
+.all-filter:hover, .all-filter.active { background: var(--orange-dim); border-color: var(--border-hover); color: var(--text); }
+.all-filter .count { font-size: 11px; background: rgba(255,255,255,0.06); padding: 1px 7px; border-radius: 20px; }
+.all-filter.active .count { background: var(--orange); color: #fff; }
+.add-cat-btn { width: 100%; margin-top: 8px; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px dashed rgba(249,115,22,0.3); background: transparent; color: rgba(249,115,22,0.6); font-family: 'Tajawal', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.add-cat-btn:hover { border-color: var(--orange); color: var(--orange); background: var(--orange-glow); }
+
+/* DELETE CAT btn */
+.cat-del-btn { width: 18px; height: 18px; border-radius: 4px; border: none; background: transparent; color: rgba(239,68,68,0.4); font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; padding: 0; line-height: 1; }
+.cat-del-btn:hover { color: #EF4444; background: rgba(239,68,68,0.1); }
+
+/* MAIN TOOLBAR */
+.main-toolbar { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+.add-idea-btn { padding: 9px 18px; border-radius: var(--radius-sm); border: 1px solid rgba(249,115,22,0.4); background: var(--orange-dim); color: var(--orange); font-family: 'Tajawal', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.add-idea-btn:hover { background: var(--orange); color: #fff; }
+
+/* ADD MODALS */
+.mini-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 400; display: none; align-items: center; justify-content: center; padding: 20px; }
+.mini-overlay.open { display: flex; }
+.mini-modal { background: var(--surface); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius); width: 100%; max-width: 440px; padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+.mini-modal h3 { font-size: 15px; font-weight: 800; color: var(--text); }
+.mini-modal label { font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px; }
+.mini-input { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: 'Tajawal', sans-serif; font-size: 14px; padding: 10px 12px; outline: none; transition: border-color 0.2s; direction: rtl; }
+.mini-input:focus { border-color: rgba(249,115,22,0.4); }
+.mini-textarea { min-height: 80px; resize: vertical; }
+.mini-select { appearance: none; -webkit-appearance: none; cursor: pointer; }
+.mini-foot { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -156,42 +224,26 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.85); b
     <span>مكتمل: <b class="stat-done" id="s-done">0</b></span>
     <span>الكل: <b id="s-total">0</b></span>
   </div>
+  <button class="hamburger-btn" onclick="toggleDrawer()" id="hamburger-btn">☰</button>
 </nav>
 
+<!-- DRAWER OVERLAY -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+
 <div class="layout">
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-block">
       <h3>التصنيفات</h3>
-      <button class="filter-btn active" onclick="setFilter('all')" id="f-all">
-        <span>كل الأفكار</span><span class="count" id="fc-all">0</span>
-      </button>
-      <button class="filter-btn" onclick="setFilter('AI والتطور')" id="f-ai">
-        <span>AI والتطور</span><span class="count" id="fc-ai">0</span>
-      </button>
-      <button class="filter-btn" onclick="setFilter('Tools')" id="f-tools">
-        <span>Tools</span><span class="count" id="fc-tools">0</span>
-      </button>
-      <button class="filter-btn" onclick="setFilter('التصميم')" id="f-design">
-        <span>التصميم</span><span class="count" id="fc-design">0</span>
-      </button>
-      <button class="filter-btn" onclick="setFilter('الفن والتاريخ')" id="f-art">
-        <span>الفن والتاريخ</span><span class="count" id="fc-art">0</span>
-      </button>
-      <button class="filter-btn" onclick="setFilter('وجهات نظر')" id="f-opinion">
-        <span>وجهات نظر</span><span class="count" id="fc-opinion">0</span>
-      </button>
-      <button class="filter-btn" onclick="setFilter('شخصيات')" id="f-persons">
-        <span>شخصيات</span><span class="count" id="fc-persons">0</span>
-      </button>
-    </div>
-    <div class="sidebar-block">
-      <h3>توزيع المحتوى</h3>
-      <div class="chart-wrap"><canvas id="chart"></canvas></div>
+      <div id="cat-list"></div>
+      <button class="add-cat-btn" onclick="openAddCat()">＋ تصنيف جديد</button>
     </div>
     <div class="tip">💡 اضغط على أي كارد عشان تكتب السكريبت. كل حاجة بتتحفظ تلقائياً.</div>
   </aside>
 
   <main class="main">
+    <div class="main-toolbar">
+      <button class="add-idea-btn" onclick="openAddIdea()">＋ فكرة جديدة</button>
+    </div>
     <div class="grid" id="grid"></div>
   </main>
 </div>
@@ -226,7 +278,7 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.85); b
       </div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-tele" onclick="openTele()">▶ تلقين</button>
+      <button class="btn btn-tele" onclick="openTele()">📺 Teleprompter</button>
       <button class="btn btn-ghost" onclick="closeModal()">إغلاق</button>
       <button class="btn btn-primary" onclick="saveAndClose()">حفظ</button>
     </div>
@@ -237,6 +289,7 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.85); b
 <div class="tele-overlay" id="tele">
   <div class="tele-controls">
     <button class="tele-btn play" id="tele-play-btn" onclick="toggleTele()">▶ تشغيل</button>
+    <button class="tele-btn restart" onclick="restartTele()">↩ من البداية</button>
     <button class="tele-btn stop" onclick="closeTele()">✕ إغلاق</button>
     <div class="tele-speed-wrap">
       <span>السرعة:</span>
@@ -248,6 +301,40 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.85); b
   <div class="tele-scroll" id="tele-scroll">
     <div class="tele-center-line"></div>
     <div class="tele-text-wrap" id="tele-text"></div>
+  </div>
+</div>
+
+<!-- ADD CATEGORY MODAL -->
+<div class="mini-overlay" id="add-cat-overlay" onclick="closeAddCat(event)">
+  <div class="mini-modal" onclick="event.stopPropagation()">
+    <h3>➕ تصنيف جديد</h3>
+    <div>
+      <label>اسم التصنيف</label>
+      <input class="mini-input" id="new-cat-input" placeholder="مثال: إنتاجية، صحة، تسويق..." />
+    </div>
+    <div class="mini-foot">
+      <button class="btn btn-ghost" onclick="closeAddCat()">إلغاء</button>
+      <button class="btn btn-primary" onclick="confirmAddCat()">إضافة</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD IDEA MODAL -->
+<div class="mini-overlay" id="add-idea-overlay" onclick="closeAddIdea(event)">
+  <div class="mini-modal" onclick="event.stopPropagation()">
+    <h3>💡 فكرة جديدة</h3>
+    <div>
+      <label>التصنيف</label>
+      <select class="mini-input mini-select" id="new-idea-cat"></select>
+    </div>
+    <div>
+      <label>نص الفكرة</label>
+      <textarea class="mini-input mini-textarea" id="new-idea-text" placeholder="اكتب الفكرة هنا..."></textarea>
+    </div>
+    <div class="mini-foot">
+      <button class="btn btn-ghost" onclick="closeAddIdea()">إلغاء</button>
+      <button class="btn btn-primary" onclick="confirmAddIdea()">إضافة</button>
+    </div>
   </div>
 </div>
 
@@ -377,18 +464,49 @@ const IDEAS_RAW = [
   {id:110,cat:"شخصيات",text:'"Neville Brody" — صمم الـ "Face Magazine" في الـ 80s وغيّر وجه الـ "editorial design" للأبد'}
 ];
 
-// Load state
-let data = {};
-const saved = localStorage.getItem('galileo_v2');
-if(saved) { try { data = JSON.parse(saved); } catch(e) { data = {}; } }
+// ─── STORAGE ────────────────────────────────────────────────
+const STORE_KEY = 'galileo_v3';
 
-// Merge with fresh ideas
+function loadStore() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch(e) { return {}; }
+}
+function saveStore() { localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
+
+let store = loadStore();
+// ensure defaults
+if (!store.data)       store.data = {};
+if (!store.customCats) store.customCats = [];
+if (!store.customIdeas) store.customIdeas = [];
+if (!store.openCats)   store.openCats = {};
+
+// migrate old data key if present
+const oldSaved = localStorage.getItem('galileo_v2');
+if (oldSaved && Object.keys(store.data).length === 0) {
+  try { store.data = JSON.parse(oldSaved); } catch(e) {}
+}
+
+// seed data for built-in ideas
 IDEAS_RAW.forEach(idea => {
-  if(!data[idea.id]) data[idea.id] = { status:'pending', script:'' };
+  if (!store.data[idea.id]) store.data[idea.id] = { status:'pending', script:'' };
 });
+saveStore();
 
-function save() { localStorage.setItem('galileo_v2', JSON.stringify(data)); }
+// ─── DERIVED DATA ────────────────────────────────────────────
+const BUILTIN_CATS = ['AI والتطور','Tools','التصميم','الفن والتاريخ','وجهات نظر','شخصيات'];
 
+function getAllCats() {
+  return [...BUILTIN_CATS, ...store.customCats];
+}
+
+function getAllIdeas() {
+  return [...IDEAS_RAW, ...store.customIdeas];
+}
+
+function getIdeaById(id) {
+  return getAllIdeas().find(i => i.id === id);
+}
+
+// ─── STATE ──────────────────────────────────────────────────
 let currentFilter = 'all';
 let currentId = null;
 let deleteId = null;
@@ -398,25 +516,77 @@ let teleRaf = null;
 let telePos = 0;
 let autosaveTimer = null;
 
-function getFiltered() {
-  if(currentFilter === 'all') return IDEAS_RAW;
-  return IDEAS_RAW.filter(i => i.cat === currentFilter);
+// ─── PROGRESS ───────────────────────────────────────────────
+function getProgress(id) {
+  const s = store.data[id]?.script || '';
+  if (!s.trim()) return 0;
+  if (s.length < 50) return 30;
+  if (s.length < 200) return 60;
+  return 100;
 }
 
-function getProgress(id) {
-  const s = data[id]?.script || '';
-  if(!s.trim()) return 0;
-  if(s.length < 50) return 30;
-  if(s.length < 200) return 60;
-  return 100;
+// ─── SIDEBAR RENDER ─────────────────────────────────────────
+function renderSidebar() {
+  const allIdeas = getAllIdeas();
+  const allCats  = getAllCats();
+  const totalCount = allIdeas.length;
+
+  let html = `<button class="all-filter ${currentFilter==='all'?'active':''}" onclick="setFilter('all')">
+    <span>كل الأفكار</span><span class="count">${totalCount}</span>
+  </button>`;
+
+  allCats.forEach(cat => {
+    const count = allIdeas.filter(i => i.cat === cat).length;
+    const isOpen = !!store.openCats[cat];
+    const isActive = currentFilter === cat;
+    const isCustom = !BUILTIN_CATS.includes(cat);
+
+    html += `<div class="cat-group">
+      <button class="cat-header ${isActive?'active':''} ${isOpen?'open':''}" onclick="toggleCat('${escAttr(cat)}')">
+        <span class="cat-left">
+          <span class="cat-arrow">▼</span>
+          <span>${cat}</span>
+        </span>
+        <span style="display:flex;align-items:center;gap:6px">
+          <span class="count">${count}</span>
+          ${isCustom ? `<button class="cat-del-btn" onclick="event.stopPropagation();askDeleteCat('${escAttr(cat)}')" title="حذف التصنيف">✕</button>` : ''}
+        </span>
+      </button>
+      <div class="cat-body ${isOpen?'open':''}">
+        <button class="cat-sub-filter" onclick="setFilter('${escAttr(cat)}')">عرض الكل (${count})</button>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('cat-list').innerHTML = html;
+}
+
+function escAttr(s) { return s.replace(/'/g,"&#39;").replace(/"/g,'&quot;'); }
+
+function toggleCat(cat) {
+  store.openCats[cat] = !store.openCats[cat];
+  saveStore();
+  if (currentFilter === cat || currentFilter === 'all') {
+    // just re-render sidebar
+  }
+  renderSidebar();
+}
+
+// ─── GRID RENDER ────────────────────────────────────────────
+function getFiltered() {
+  if (currentFilter === 'all') return getAllIdeas();
+  return getAllIdeas().filter(i => i.cat === currentFilter);
 }
 
 function renderGrid() {
   const grid = document.getElementById('grid');
   const items = getFiltered();
-  if(!items.length) { grid.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><p>مفيش أفكار في التصنيف ده</p></div>'; return; }
+  if (!items.length) {
+    grid.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><p>مفيش أفكار في التصنيف ده</p></div>';
+    return;
+  }
   grid.innerHTML = items.map(idea => {
-    const d = data[idea.id];
+    const d = store.data[idea.id] || {status:'pending',script:''};
     const prog = getProgress(idea.id);
     const statusClass = d.status === 'done' ? 'done' : d.status === 'recording' ? 'recording' : '';
     const progLabel = prog === 0 ? 'فاضي' : prog < 100 ? 'جاري الكتابة' : 'مكتمل';
@@ -443,32 +613,43 @@ function renderGrid() {
   }).join('');
 }
 
+// ─── STATS ──────────────────────────────────────────────────
 function updateStats() {
-  const rec = IDEAS_RAW.filter(i => data[i.id]?.status === 'recording').length;
-  const done = IDEAS_RAW.filter(i => data[i.id]?.status === 'done').length;
+  const all = getAllIdeas();
+  const rec  = all.filter(i => store.data[i.id]?.status === 'recording').length;
+  const done = all.filter(i => store.data[i.id]?.status === 'done').length;
   document.getElementById('s-rec').textContent = rec;
   document.getElementById('s-done').textContent = done;
-  document.getElementById('s-total').textContent = IDEAS_RAW.length;
-  // filter counts
-  document.getElementById('fc-all').textContent = IDEAS_RAW.length;
-  ['AI والتطور','Tools','التصميم','الفن والتاريخ','وجهات نظر','شخصيات'].forEach((cat,i) => {
-    const ids = ['fc-ai','fc-tools','fc-design','fc-art','fc-opinion','fc-persons'];
-    document.getElementById(ids[i]).textContent = IDEAS_RAW.filter(x => x.cat === cat).length;
-  });
+  document.getElementById('s-total').textContent = all.length;
 }
 
+// ─── DRAWER (mobile) ────────────────────────────────────────
+function toggleDrawer() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('drawer-overlay');
+  const isOpen = sidebar.classList.contains('drawer-open');
+  if (isOpen) { closeDrawer(); } else { sidebar.classList.add('drawer-open'); overlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
+}
+function closeDrawer() {
+  document.getElementById('sidebar').classList.remove('drawer-open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ─── FILTER ─────────────────────────────────────────────────
 function setFilter(cat) {
   currentFilter = cat;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  const map = {'all':'f-all','AI والتطور':'f-ai','Tools':'f-tools','التصميم':'f-design','الفن والتاريخ':'f-art','وجهات نظر':'f-opinion','شخصيات':'f-persons'};
-  document.getElementById(map[cat])?.classList.add('active');
+  closeDrawer();
+  renderSidebar();
   renderGrid();
 }
 
+// ─── MODAL ──────────────────────────────────────────────────
 function openModal(id) {
   currentId = id;
-  const idea = IDEAS_RAW.find(i => i.id === id);
-  const d = data[id];
+  const idea = getIdeaById(id);
+  if (!store.data[id]) store.data[id] = { status:'pending', script:'' };
+  const d = store.data[id];
   document.getElementById('m-cat').textContent = idea.cat;
   document.getElementById('m-title').textContent = idea.text;
   document.getElementById('script-area').value = d.script || '';
@@ -478,9 +659,9 @@ function openModal(id) {
 }
 
 function closeModal(e) {
-  if(e && e.target !== document.getElementById('modal-overlay')) return;
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
   document.getElementById('modal-overlay').classList.remove('open');
-  save();
+  saveStore();
   renderGrid();
   updateStats();
 }
@@ -492,18 +673,19 @@ function updateStatusBtns(status) {
 }
 
 function setStatus(s) {
-  if(!currentId) return;
-  data[currentId].status = s;
+  if (!currentId) return;
+  store.data[currentId].status = s;
   updateStatusBtns(s);
-  save();
+  saveStore();
 }
 
 function autoSave() {
-  if(!currentId) return;
-  data[currentId].script = document.getElementById('script-area').value;
+  if (!currentId) return;
+  if (!store.data[currentId]) store.data[currentId] = {status:'pending',script:''};
+  store.data[currentId].script = document.getElementById('script-area').value;
   clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(() => {
-    save();
+    saveStore();
     const badge = document.getElementById('autosave-badge');
     badge.classList.add('show');
     setTimeout(() => badge.classList.remove('show'), 2000);
@@ -511,26 +693,110 @@ function autoSave() {
 }
 
 function saveAndClose() {
-  if(currentId) { data[currentId].script = document.getElementById('script-area').value; save(); }
+  if (currentId) {
+    if (!store.data[currentId]) store.data[currentId] = {status:'pending',script:''};
+    store.data[currentId].script = document.getElementById('script-area').value;
+    saveStore();
+  }
   document.getElementById('modal-overlay').classList.remove('open');
   renderGrid(); updateStats();
 }
 
+// ─── DELETE IDEA ────────────────────────────────────────────
 function askDelete(id) {
   deleteId = id;
   document.getElementById('confirm-overlay').classList.add('open');
 }
-function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('open'); deleteId = null; }
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  deleteId = null;
+}
 function confirmDelete() {
-  if(deleteId) { data[deleteId] = { status:'pending', script:'' }; save(); }
+  if (deleteId) {
+    // if custom idea — remove entirely
+    const idx = store.customIdeas.findIndex(i => i.id === deleteId);
+    if (idx !== -1) {
+      store.customIdeas.splice(idx, 1);
+    } else {
+      store.data[deleteId] = { status:'pending', script:'' };
+    }
+    saveStore();
+  }
   closeConfirm();
-  renderGrid(); updateStats();
+  renderGrid(); renderSidebar(); updateStats();
 }
 
-// TELEPROMPTER
+// ─── ADD CATEGORY ───────────────────────────────────────────
+function openAddCat() {
+  document.getElementById('new-cat-input').value = '';
+  document.getElementById('add-cat-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('new-cat-input').focus(), 100);
+}
+function closeAddCat(e) {
+  if (e && e.target !== document.getElementById('add-cat-overlay')) return;
+  document.getElementById('add-cat-overlay').classList.remove('open');
+}
+function confirmAddCat() {
+  const name = document.getElementById('new-cat-input').value.trim();
+  if (!name) return;
+  if (getAllCats().includes(name)) { alert('التصنيف ده موجود خالص'); return; }
+  store.customCats.push(name);
+  saveStore();
+  document.getElementById('add-cat-overlay').classList.remove('open');
+  renderSidebar(); updateStats();
+}
+
+// ─── DELETE CATEGORY ────────────────────────────────────────
+let deleteCatName = null;
+function askDeleteCat(cat) {
+  deleteCatName = cat;
+  if (confirm(`هتحذف تصنيف "${cat}" وكل أفكاره؟`)) {
+    confirmDeleteCat();
+  }
+}
+function confirmDeleteCat() {
+  if (!deleteCatName) return;
+  // remove from customCats
+  store.customCats = store.customCats.filter(c => c !== deleteCatName);
+  // remove its custom ideas + data
+  const toRemove = store.customIdeas.filter(i => i.cat === deleteCatName).map(i => i.id);
+  toRemove.forEach(id => delete store.data[id]);
+  store.customIdeas = store.customIdeas.filter(i => i.cat !== deleteCatName);
+  saveStore();
+  if (currentFilter === deleteCatName) currentFilter = 'all';
+  deleteCatName = null;
+  renderSidebar(); renderGrid(); updateStats();
+}
+
+// ─── ADD IDEA ───────────────────────────────────────────────
+function openAddIdea() {
+  const sel = document.getElementById('new-idea-cat');
+  sel.innerHTML = getAllCats().map(c => `<option value="${c}">${c}</option>`).join('');
+  if (currentFilter !== 'all') sel.value = currentFilter;
+  document.getElementById('new-idea-text').value = '';
+  document.getElementById('add-idea-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('new-idea-text').focus(), 100);
+}
+function closeAddIdea(e) {
+  if (e && e.target !== document.getElementById('add-idea-overlay')) return;
+  document.getElementById('add-idea-overlay').classList.remove('open');
+}
+function confirmAddIdea() {
+  const cat  = document.getElementById('new-idea-cat').value;
+  const text = document.getElementById('new-idea-text').value.trim();
+  if (!text) return;
+  const newId = 'c_' + Date.now();
+  store.customIdeas.push({ id: newId, cat, text });
+  store.data[newId] = { status:'pending', script:'' };
+  saveStore();
+  document.getElementById('add-idea-overlay').classList.remove('open');
+  renderSidebar(); renderGrid(); updateStats();
+}
+
+// ─── TELEPROMPTER ───────────────────────────────────────────
 function openTele() {
   const script = document.getElementById('script-area').value;
-  if(!script.trim()) { alert('اكتب السكريبت الأول'); return; }
+  if (!script.trim()) { alert('اكتب السكريبت الأول'); return; }
   const lines = script.split('\n').filter(l => l.trim());
   const html = lines.map(l => {
     const formatted = l.replace(/^(Hook:)/i, '<span class="tele-hook">$1</span>');
@@ -538,19 +804,19 @@ function openTele() {
   }).join('');
   document.getElementById('tele-text').innerHTML = html;
   telePos = 0;
-  document.getElementById('tele-scroll').scrollTop = 0;
+  const scrollEl = document.getElementById('tele-scroll');
+  scrollEl.scrollTop = 0;
   document.getElementById('tele').classList.add('open');
   teleRunning = false;
   document.getElementById('tele-play-btn').textContent = '▶ تشغيل';
+  initTeleDrag();
 }
 
-function closeTele() {
-  stopTele();
-  document.getElementById('tele').classList.remove('open');
-}
+function closeTele() { stopTele(); document.getElementById('tele').classList.remove('open'); }
+function restartTele() { stopTele(); document.getElementById('tele-scroll').scrollTop = 0; document.getElementById('tele-play-btn').textContent = '▶ تشغيل'; }
 
 function toggleTele() {
-  if(teleRunning) { stopTele(); document.getElementById('tele-play-btn').textContent = '▶ تشغيل'; }
+  if (teleRunning) { stopTele(); document.getElementById('tele-play-btn').textContent = '▶ تشغيل'; }
   else { startTele(); document.getElementById('tele-play-btn').textContent = '⏸ إيقاف'; }
 }
 
@@ -559,8 +825,8 @@ function startTele() {
   const scroll = document.getElementById('tele-scroll');
   let last = null;
   function step(ts) {
-    if(!teleRunning) return;
-    if(last) { const dt = ts - last; scroll.scrollTop += (teleSpeed * 0.06 * dt); }
+    if (!teleRunning) return;
+    if (last) { const dt = ts - last; scroll.scrollTop += (teleSpeed * 0.06 * dt); }
     last = ts;
     teleRaf = requestAnimationFrame(step);
   }
@@ -573,32 +839,26 @@ function changeSpeed(d) {
   document.getElementById('speed-label').textContent = teleSpeed.toFixed(1) + 'x';
 }
 
-// Chart
-const ctx = document.getElementById('chart').getContext('2d');
-new Chart(ctx, {
-  type: 'bar',
-  data: {
-    labels: ['AI', 'Tools', 'تصميم', 'تاريخ', 'رأي', 'شخصيات'],
-    datasets: [{ data: [20,20,20,20,15,15], backgroundColor: 'rgba(249,115,22,0.35)', borderColor: '#F97316', borderWidth: 1, borderRadius: 4 }]
-  },
-  options: {
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      y: { display: false },
-      x: { ticks: { color: '#475569', font: { family: 'Tajawal', size: 10 } }, grid: { display: false } }
-    }
-  }
-});
+function initTeleDrag() {
+  const el = document.getElementById('tele-scroll');
+  let isDragging = false, startY = 0, startTop = 0;
+  el.onmousedown = function(e) { isDragging = true; startY = e.clientY; startTop = el.scrollTop; e.preventDefault(); };
+  document.onmousemove = function(e) { if (!isDragging) return; el.scrollTop = startTop - (e.clientY - startY); };
+  document.onmouseup = function() { isDragging = false; };
+  el.ontouchstart = function(e) { startY = e.touches[0].clientY; startTop = el.scrollTop; };
+  el.ontouchmove = function(e) { el.scrollTop = startTop - (e.touches[0].clientY - startY); e.preventDefault(); };
+}
 
-// keyboard ESC
+// ─── KEYBOARD ───────────────────────────────────────────────
 document.addEventListener('keydown', e => {
-  if(e.key === 'Escape') { closeTele(); closeModal(); closeConfirm(); }
+  if (e.key === 'Escape') { closeTele(); closeDrawer(); document.getElementById('modal-overlay').classList.remove('open'); closeConfirm(); document.getElementById('add-cat-overlay').classList.remove('open'); document.getElementById('add-idea-overlay').classList.remove('open'); }
+  if (e.key === 'Enter' && document.getElementById('add-cat-overlay').classList.contains('open')) confirmAddCat();
 });
 
-// Init
-updateStats();
+// ─── INIT ───────────────────────────────────────────────────
+renderSidebar();
 renderGrid();
+updateStats();
 </script>
 </body>
 </html>
