@@ -223,6 +223,7 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.85); b
     <span>جاري التصوير: <b class="stat-rec" id="s-rec">0</b></span>
     <span>مكتمل: <b class="stat-done" id="s-done">0</b></span>
     <span>الكل: <b id="s-total">0</b></span>
+    <span id="sync-status" style="opacity:0;transition:opacity 0.3s;font-size:11px;"></span>
   </div>
   <button class="hamburger-btn" onclick="toggleDrawer()" id="hamburger-btn">☰</button>
 </nav>
@@ -350,7 +351,7 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.85); b
   </div>
 </div>
 
-<script>
+<script type="module">
 const IDEAS_RAW = [
   {id:1,cat:"AI والتطور",text:'كل يوم بيتعمل 34 مليون صورة بالـ "AI" — في الوقت اللي بتقرأ فيه ده اتعملت آلاف'},
   {id:2,cat:"AI والتطور",text:'بين 2022 و2023 اتعملت 15 مليار صورة بـ "AI" — أكتر من كل تاريخ الفوتوغرافي'},
@@ -464,32 +465,62 @@ const IDEAS_RAW = [
   {id:110,cat:"شخصيات",text:'"Neville Brody" — صمم الـ "Face Magazine" في الـ 80s وغيّر وجه الـ "editorial design" للأبد'}
 ];
 
-// ─── STORAGE ────────────────────────────────────────────────
-const STORE_KEY = 'galileo_v3';
+// ─── FIREBASE ───────────────────────────────────────────────
+const FIREBASE_URL = 'https://galio-7c334-default-rtdb.europe-west1.firebasedatabase.app';
+const STORE_PATH   = '/galio_store.json';
+let _saveTimeout   = null;
+let store = { data:{}, customCats:[], customIdeas:[], openCats:{} };
 
-function loadStore() {
-  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch(e) { return {}; }
+async function loadStore() {
+  try {
+    showSync('loading');
+    const res = await fetch(FIREBASE_URL + STORE_PATH);
+    const remote = await res.json();
+    if (remote && typeof remote === 'object') store = remote;
+  } catch(e) { console.warn('load failed', e); }
+  if (!store.data)        store.data = {};
+  if (!store.customCats)  store.customCats = [];
+  if (!store.customIdeas) store.customIdeas = [];
+  if (!store.openCats)    store.openCats = {};
+  hideSync();
 }
-function saveStore() { localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
 
-let store = loadStore();
-// ensure defaults
-if (!store.data)       store.data = {};
-if (!store.customCats) store.customCats = [];
-if (!store.customIdeas) store.customIdeas = [];
-if (!store.openCats)   store.openCats = {};
-
-// migrate old data key if present
-const oldSaved = localStorage.getItem('galileo_v2');
-if (oldSaved && Object.keys(store.data).length === 0) {
-  try { store.data = JSON.parse(oldSaved); } catch(e) {}
+function saveStore() {
+  clearTimeout(_saveTimeout);
+  _saveTimeout = setTimeout(async () => {
+    try {
+      showSync('saving');
+      await fetch(FIREBASE_URL + STORE_PATH, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(store)
+      });
+      hideSync();
+    } catch(e) { hideSync('error'); }
+  }, 600);
 }
 
-// seed data for built-in ideas
+function showSync(state) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  el.style.opacity = '1';
+  if (state === 'loading') { el.textContent = '⏳ جاري التحميل...'; el.style.color = '#94A3B8'; }
+  if (state === 'saving')  { el.textContent = '☁ حفظ...'; el.style.color = '#F59E0B'; }
+}
+function hideSync(state) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  if (state === 'error') { el.textContent = '⚠ فشل الحفظ'; el.style.color = '#EF4444'; return; }
+  el.textContent = '✓ محفوظ'; el.style.color = '#10B981';
+  setTimeout(() => { el.style.opacity = '0'; }, 2000);
+}
+
+await loadStore();
+
+// seed built-in ideas
 IDEAS_RAW.forEach(idea => {
   if (!store.data[idea.id]) store.data[idea.id] = { status:'pending', script:'' };
 });
-saveStore();
 
 // ─── DERIVED DATA ────────────────────────────────────────────
 const BUILTIN_CATS = ['AI والتطور','Tools','التصميم','الفن والتاريخ','وجهات نظر','شخصيات'];
@@ -590,7 +621,7 @@ function renderGrid() {
     const prog = getProgress(idea.id);
     const statusClass = d.status === 'done' ? 'done' : d.status === 'recording' ? 'recording' : '';
     const progLabel = prog === 0 ? 'فاضي' : prog < 100 ? 'جاري الكتابة' : 'مكتمل';
-    return `<div class="card ${statusClass}" onclick="openModal(${idea.id})">
+    return `<div class="card ${statusClass}" onclick="openModal('${idea.id}')">
       <div class="card-status-bar"></div>
       <div class="card-head">
         <div class="card-meta">
@@ -605,8 +636,8 @@ function renderGrid() {
           <span class="progress-label">${progLabel}</span>
         </div>
         <div class="card-actions" onclick="event.stopPropagation()">
-          <button class="btn-icon" onclick="openModal(${idea.id})" title="تعديل">✏️</button>
-          <button class="btn-icon danger" onclick="askDelete(${idea.id})" title="حذف السكريبت">🗑️</button>
+          <button class="btn-icon" onclick="openModal('${idea.id}')" title="تعديل">✏️</button>
+          <button class="btn-icon danger" onclick="askDelete('${idea.id}')" title="حذف السكريبت">🗑️</button>
         </div>
       </div>
     </div>`;
@@ -849,10 +880,53 @@ function initTeleDrag() {
   el.ontouchmove = function(e) { el.scrollTop = startTop - (e.touches[0].clientY - startY); e.preventDefault(); };
 }
 
+
+// ─── EDIT IDEA ───────────────────────────────────────────────
+let editIdeaId = null;
+function openEditIdea(id) {
+  const idea = store.customIdeas.find(i => String(i.id) === String(id));
+  if (!idea) return;
+  editIdeaId = id;
+  const sel = document.getElementById('edit-idea-cat');
+  sel.innerHTML = getAllCats().map(c => `<option value="${c}" ${c===idea.cat?'selected':''}>${c}</option>`).join('');
+  document.getElementById('edit-idea-text').value = idea.text;
+  document.getElementById('edit-idea-overlay').classList.add('open');
+}
+function closeEditIdea(e) {
+  if (e && e.target !== document.getElementById('edit-idea-overlay')) return;
+  document.getElementById('edit-idea-overlay').classList.remove('open');
+  editIdeaId = null;
+}
+function confirmEditIdea() {
+  const idea = store.customIdeas.find(i => String(i.id) === String(editIdeaId));
+  if (!idea) return;
+  const newCat  = document.getElementById('edit-idea-cat').value;
+  const newText = document.getElementById('edit-idea-text').value.trim();
+  if (!newText) return;
+  idea.cat  = newCat;
+  idea.text = newText;
+  saveStore();
+  document.getElementById('edit-idea-overlay').classList.remove('open');
+  editIdeaId = null;
+  renderSidebar(); renderGrid(); updateStats();
+}
+
 // ─── KEYBOARD ───────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeTele(); closeDrawer(); document.getElementById('modal-overlay').classList.remove('open'); closeConfirm(); document.getElementById('add-cat-overlay').classList.remove('open'); document.getElementById('add-idea-overlay').classList.remove('open'); }
   if (e.key === 'Enter' && document.getElementById('add-cat-overlay').classList.contains('open')) confirmAddCat();
+});
+
+
+// ─── GLOBALS FOR INLINE HANDLERS ────────────────────────────
+Object.assign(window, {
+  setFilter, toggleCat, openModal, closeModal, saveAndClose,
+  setStatus, autoSave, openTele, closeTele, restartTele,
+  toggleTele, changeSpeed, askDelete, closeConfirm, confirmDelete,
+  openAddCat, closeAddCat, confirmAddCat, askDeleteCat,
+  openAddIdea, closeAddIdea, confirmAddIdea,
+  openEditIdea, closeEditIdea, confirmEditIdea,
+  toggleDrawer, closeDrawer
 });
 
 // ─── INIT ───────────────────────────────────────────────────
@@ -860,5 +934,25 @@ renderSidebar();
 renderGrid();
 updateStats();
 </script>
+
+<!-- EDIT IDEA MODAL -->
+<div class="mini-overlay" id="edit-idea-overlay" onclick="closeEditIdea(event)">
+  <div class="mini-modal" onclick="event.stopPropagation()">
+    <h3>📝 تعديل الفكرة</h3>
+    <div>
+      <label>التصنيف</label>
+      <select class="mini-input mini-select" id="edit-idea-cat"></select>
+    </div>
+    <div>
+      <label>نص الفكرة</label>
+      <textarea class="mini-input mini-textarea" id="edit-idea-text" placeholder="اكتب الفكرة هنا..."></textarea>
+    </div>
+    <div class="mini-foot">
+      <button class="btn btn-ghost" onclick="closeEditIdea()">إلغاء</button>
+      <button class="btn btn-primary" onclick="confirmEditIdea()">حفظ</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
