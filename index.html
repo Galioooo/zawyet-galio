@@ -522,13 +522,8 @@ IDEAS_RAW.forEach(idea => {
   if (!store.data[idea.id]) store.data[idea.id] = { status:'pending', script:'' };
 });
 
-// ─── INIT RENDER (after Firebase data loaded) ───────────────
-renderSidebar();
-renderGrid();
-updateStats();
-
 // ─── DERIVED DATA ────────────────────────────────────────────
-const BUILTIN_CATS = ['AI والتطور','Tools','التصميم','الفن والتاريخ','وجهات نظر','شخصيات'];
+var BUILTIN_CATS = ['AI والتطور','Tools','التصميم','الفن والتاريخ','وجهات نظر','شخصيات'];
 
 function getAllCats() {
   return [...BUILTIN_CATS, ...store.customCats];
@@ -543,14 +538,14 @@ function getIdeaById(id) {
 }
 
 // ─── STATE ──────────────────────────────────────────────────
-let currentFilter = 'all';
-let currentId = null;
-let deleteId = null;
-let teleRunning = false;
-let teleSpeed = 1.0;
-let teleRaf = null;
-let telePos = 0;
-let autosaveTimer = null;
+var currentFilter = 'all';
+var currentId = null;
+var deleteId = null;
+var teleRunning = false;
+var teleSpeed = 1.0;
+var teleRaf = null;
+var telePos = 0;
+var autosaveTimer = null;
 
 // ─── PROGRESS ───────────────────────────────────────────────
 function getProgress(id) {
@@ -934,7 +929,10 @@ Object.assign(window, {
   toggleDrawer, closeDrawer
 });
 
-// ─── INIT: triggered after Firebase load (see loadStore) ───
+// ─── INIT ───────────────────────────────────────────────────
+renderSidebar();
+renderGrid();
+updateStats();
 </script>
 
 <!-- EDIT IDEA MODAL -->
