@@ -522,6 +522,11 @@ IDEAS_RAW.forEach(idea => {
   if (!store.data[idea.id]) store.data[idea.id] = { status:'pending', script:'' };
 });
 
+// ─── INIT RENDER (after Firebase data loaded) ───────────────
+renderSidebar();
+renderGrid();
+updateStats();
+
 // ─── DERIVED DATA ────────────────────────────────────────────
 const BUILTIN_CATS = ['AI والتطور','Tools','التصميم','الفن والتاريخ','وجهات نظر','شخصيات'];
 
@@ -929,10 +934,7 @@ Object.assign(window, {
   toggleDrawer, closeDrawer
 });
 
-// ─── INIT ───────────────────────────────────────────────────
-renderSidebar();
-renderGrid();
-updateStats();
+// ─── INIT: triggered after Firebase load (see loadStore) ───
 </script>
 
 <!-- EDIT IDEA MODAL -->
