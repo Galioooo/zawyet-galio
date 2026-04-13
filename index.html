@@ -544,7 +544,7 @@ function getAllIdeas() {
 }
 
 function getIdeaById(id) {
-  return getAllIdeas().find(i => i.id === id);
+  return getAllIdeas().find(i => String(i.id) === String(id));
 }
 
 // ─── STATE ──────────────────────────────────────────────────
@@ -687,10 +687,11 @@ function setFilter(cat) {
 
 // ─── MODAL ──────────────────────────────────────────────────
 function openModal(id) {
-  currentId = id;
+  currentId = String(id);
   const idea = getIdeaById(id);
-  if (!store.data[id]) store.data[id] = { status:'pending', script:'' };
-  const d = store.data[id];
+  if (!idea) { console.warn('idea not found', id); return; }
+  if (!store.data[currentId]) store.data[currentId] = { status:'pending', script:'' };
+  const d = store.data[currentId];
   document.getElementById('m-cat').textContent = idea.cat;
   document.getElementById('m-title').textContent = idea.text;
   document.getElementById('script-area').value = d.script || '';
@@ -715,6 +716,7 @@ function updateStatusBtns(status) {
 
 function setStatus(s) {
   if (!currentId) return;
+  if (!store.data[currentId]) store.data[currentId] = {status:'pending',script:''};
   store.data[currentId].status = s;
   updateStatusBtns(s);
   saveStore();
