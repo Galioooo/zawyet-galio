@@ -351,7 +351,7 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.85); b
   </div>
 </div>
 
-<script type="module">
+<script>
 const IDEAS_RAW = [
   {id:1,cat:"AI والتطور",text:'كل يوم بيتعمل 34 مليون صورة بالـ "AI" — في الوقت اللي بتقرأ فيه ده اتعملت آلاف'},
   {id:2,cat:"AI والتطور",text:'بين 2022 و2023 اتعملت 15 مليار صورة بـ "AI" — أكتر من كل تاريخ الفوتوغرافي'},
@@ -471,35 +471,6 @@ const STORE_PATH   = '/galio_store.json';
 let _saveTimeout   = null;
 let store = { data:{}, customCats:[], customIdeas:[], openCats:{} };
 
-async function loadStore() {
-  try {
-    showSync('loading');
-    const res = await fetch(FIREBASE_URL + STORE_PATH);
-    const remote = await res.json();
-    if (remote && typeof remote === 'object') store = remote;
-  } catch(e) { console.warn('load failed', e); }
-  if (!store.data)        store.data = {};
-  if (!store.customCats)  store.customCats = [];
-  if (!store.customIdeas) store.customIdeas = [];
-  if (!store.openCats)    store.openCats = {};
-  hideSync();
-}
-
-function saveStore() {
-  clearTimeout(_saveTimeout);
-  _saveTimeout = setTimeout(async () => {
-    try {
-      showSync('saving');
-      await fetch(FIREBASE_URL + STORE_PATH, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(store)
-      });
-      hideSync();
-    } catch(e) { hideSync('error'); }
-  }, 600);
-}
-
 function showSync(state) {
   const el = document.getElementById('sync-status');
   if (!el) return;
@@ -515,12 +486,51 @@ function hideSync(state) {
   setTimeout(() => { el.style.opacity = '0'; }, 2000);
 }
 
-await loadStore();
+function saveStore() {
+  clearTimeout(_saveTimeout);
+  _saveTimeout = setTimeout(function() {
+    showSync('saving');
+    fetch(FIREBASE_URL + STORE_PATH, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(store)
+    }).then(function(){ hideSync(); }).catch(function(){ hideSync('error'); });
+  }, 600);
+}
 
-// seed built-in ideas
-IDEAS_RAW.forEach(idea => {
-  if (!store.data[idea.id]) store.data[idea.id] = { status:'pending', script:'' };
-});
+function initApp() {
+  showSync('loading');
+  fetch(FIREBASE_URL + STORE_PATH)
+    .then(function(res){ return res.json(); })
+    .then(function(remote) {
+      if (remote && typeof remote === 'object') store = remote;
+      if (!store.data)        store.data = {};
+      if (!store.customCats)  store.customCats = [];
+      if (!store.customIdeas) store.customIdeas = [];
+      if (!store.openCats)    store.openCats = {};
+      IDEAS_RAW.forEach(function(idea) {
+        if (!store.data[idea.id]) store.data[idea.id] = { status:'pending', script:'' };
+      });
+      hideSync();
+      renderSidebar();
+      renderGrid();
+      updateStats();
+    })
+    .catch(function(e) {
+      console.warn('Firebase load failed', e);
+      if (!store.data)        store.data = {};
+      if (!store.customCats)  store.customCats = [];
+      if (!store.customIdeas) store.customIdeas = [];
+      if (!store.openCats)    store.openCats = {};
+      IDEAS_RAW.forEach(function(idea) {
+        if (!store.data[idea.id]) store.data[idea.id] = { status:'pending', script:'' };
+      });
+      hideSync('error');
+      renderSidebar();
+      renderGrid();
+      updateStats();
+    });
+}
 
 // ─── DERIVED DATA ────────────────────────────────────────────
 var BUILTIN_CATS = ['AI والتطور','Tools','التصميم','الفن والتاريخ','وجهات نظر','شخصيات'];
@@ -918,21 +928,8 @@ document.addEventListener('keydown', e => {
 });
 
 
-// ─── GLOBALS FOR INLINE HANDLERS ────────────────────────────
-Object.assign(window, {
-  setFilter, toggleCat, openModal, closeModal, saveAndClose,
-  setStatus, autoSave, openTele, closeTele, restartTele,
-  toggleTele, changeSpeed, askDelete, closeConfirm, confirmDelete,
-  openAddCat, closeAddCat, confirmAddCat, askDeleteCat,
-  openAddIdea, closeAddIdea, confirmAddIdea,
-  openEditIdea, closeEditIdea, confirmEditIdea,
-  toggleDrawer, closeDrawer
-});
-
 // ─── INIT ───────────────────────────────────────────────────
-renderSidebar();
-renderGrid();
-updateStats();
+initApp();
 </script>
 
 <!-- EDIT IDEA MODAL -->
